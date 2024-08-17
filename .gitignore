@@ -1,0 +1,7 @@
+src/*.o
+src/*.asm
+src/wumpus.map
+src/wumpus.prg
+images/*.xbm
+!images/wumpus.xbm
+.vscode
