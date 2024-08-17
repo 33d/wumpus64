@@ -1,5 +1,8 @@
 #include "game.h"
-#include "sys.h"
+#include "sys_c64.h"
+#include "display.h"
+
+#include <c64.h>
 
 static const uint8_t TILE_ROOM[] = {
     0, 1, 2, 3, 4, 32, 32, 7, 8, 32, 32, 11, 12, 13, 14, 15
@@ -35,7 +38,7 @@ static void draw_tile(uint_fast8_t y, uint_fast8_t x) {
         draw_tile_from_indices(TILE_URLL, tile_start);
 }
 
-void draw_map() {
+void display_draw_map() {
     uint_fast8_t y, x;
 
     for (y = 0; y < GAME_HEIGHT; y++) {
@@ -43,4 +46,9 @@ void draw_map() {
             draw_tile(y, x);
         }
     }
+}
+
+void display_init() {
+    // Character memory at $3800
+    VIC.addr |= 0xE;
 }
