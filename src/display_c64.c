@@ -49,6 +49,25 @@ void display_draw_map() {
 }
 
 void display_init() {
+    const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
+
     // Character memory at $3800
     VIC.addr |= 0xE;
+
+    // Set the sprite pointers
+    *(screenmem + 0x3f8) = sprite_ptr;
+    *(screenmem + 0x3f9) = sprite_ptr + 1;
+
+    // Sprite colors
+    VIC.spr0_color = COLOR_YELLOW;
+    VIC.spr1_color = COLOR_BLACK;
+
+    // Sprite location
+    VIC.spr0_x = 50;
+    VIC.spr0_y = 50;
+    VIC.spr1_x = 50;
+    VIC.spr1_y = 50;
+
+    // Sprites on
+    VIC.spr_ena = 0x3;
 }
