@@ -4,6 +4,8 @@
 
 #include <c64.h>
 
+#define PASSAGE_OFFSET 6
+
 static const uint8_t TILE_ROOM[] = {
     0, 1, 2, 3, 4, 32, 32, 7, 8, 32, 32, 11, 12, 13, 14, 15
 };
@@ -48,6 +50,49 @@ void display_draw_map() {
     }
 }
 
+void display_update_player() {
+    uint_fast16_t x;
+    int8_t xoff = 0, yoff = 0;
+    uint_fast8_t tile = game_player_tile();
+
+    // If the player is in a passage, move to one side
+    if (tile & MASK_UL) {
+        if (game.passage_up) {
+            xoff = -PASSAGE_OFFSET;
+            yoff = -PASSAGE_OFFSET;
+        } else {
+            xoff =  PASSAGE_OFFSET;
+            yoff =  PASSAGE_OFFSET;
+        }
+    } else if (tile & MASK_UR) {
+        if (game.passage_up) {
+            xoff =  PASSAGE_OFFSET;
+            yoff = -PASSAGE_OFFSET;
+        } else {
+            xoff = -PASSAGE_OFFSET;
+            yoff =  PASSAGE_OFFSET;
+        }
+    }
+
+    x = 17    // ???
+        + 32  // map is offset by 4 tiles
+        + 8   // sprite is in the left 16 pixels
+        + (uint_fast16_t) game.player.x * 32
+        + xoff;
+    VIC.spr0_x = VIC.spr1_x = x;
+    // Set the 9th bit of the x coordinate
+    if (x > 255)
+        VIC.spr_hi_x |= 3;
+    else
+        VIC.spr_hi_x &= ~3;
+
+    VIC.spr0_y = VIC.spr1_y =
+        46  // ???
+        + 8 // sprite is in the top 16 pixels
+        + game.player.y * 32
+        + yoff;
+}
+
 void display_init() {
     const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
 
@@ -61,12 +106,6 @@ void display_init() {
     // Sprite colors
     VIC.spr0_color = COLOR_YELLOW;
     VIC.spr1_color = COLOR_BLACK;
-
-    // Sprite location
-    VIC.spr0_x = 50;
-    VIC.spr0_y = 50;
-    VIC.spr1_x = 50;
-    VIC.spr1_y = 50;
 
     // Sprites on
     VIC.spr_ena = 0x3;

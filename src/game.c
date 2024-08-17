@@ -136,6 +136,10 @@ void game_new(uint_fast8_t room_chance) {
     place_player();
 }
 
+uint_fast8_t game_player_tile() {
+    return game.map[game.player.y][game.player.x];
+}
+
 bool coords_equal(const struct GameCoord* c1, const struct GameCoord* c2) {
     return c1->x == c2->x && c1->y == c2->y;
 }
@@ -188,22 +192,25 @@ enum MoveResult game_move_down() {
 }
 
 enum MoveResult game_move_left() {
-    uint_fast8_t tile = game.map[game.player.y][game.player.x];
-    if (!game.passage_up && tile == MASK_UL || game.passage_up && tile == MASK_UR)
+    uint_fast8_t tile = game_player_tile();
+    if ((game.passage_up && (tile & MASK_UR)) || (!game.passage_up && (tile & MASK_UL)))
         return NOTHING;
 
-    game.player.y = (game.player.y == 0) ? GAME_HEIGHT - 1 : game.player.y - 1;
-    game.passage_up = false;
+    game.player.x = (game.player.x == 0) ? GAME_WIDTH - 1 : game.player.x - 1;
+    tile = game_player_tile();
+    game.passage_up = (tile & MASK_UR) != 0;
 
     return check_player();
 }
 
 enum MoveResult game_move_right() {
-    uint_fast8_t tile = game.map[game.player.y][game.player.x];
-    if (game.passage_up && tile == MASK_UL || !game.passage_up && tile == MASK_UR)
+    uint_fast8_t tile = game_player_tile();
+    if ((game.passage_up && (tile & MASK_UL)) || (!game.passage_up && (tile & MASK_UR)))
         return NOTHING;
 
     game.player.x = (game.player.x == GAME_WIDTH - 1) ? 0 : game.player.x + 1;
+    tile = game_player_tile();
+    game.passage_up = (tile & MASK_UL) != 0;
 
     return check_player();
 }

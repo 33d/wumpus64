@@ -40,6 +40,7 @@ struct Game {
 extern struct Game game;
 
 void game_new(uint_fast8_t room_chance);
+uint_fast8_t game_player_tile();
 
 enum MoveResult game_move_up();
 enum MoveResult game_move_down();

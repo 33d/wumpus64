@@ -106,7 +106,7 @@ EXELIST_pet = \
 EXELIST_vic20 = \
         notavailable
 
-OBJECTS=main.o game.o graphics_data.o sprite_data.o display_c64.o
+OBJECTS=main.o game.o graphics_data.o sprite_data.o display_c64.o input_c64.o
 
 wumpus.prg: $(OBJECTS) c64.cfg
 	$(CL) -t $(SYS) -C c64.cfg -o $@ -m wumpus.map $(OBJECTS)
