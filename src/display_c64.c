@@ -89,9 +89,9 @@ void display_update_player() {
         }
     }
 
-    x = 17    // ???
+    x = 24    // ???
         + 32  // map is offset by 4 tiles
-        + 8   // sprite is in the left 16 pixels
+        + 4   // sprite is centred in its 24 pixels
         + (uint_fast16_t) game.player.x * 32
         + xoff;
     VIC.spr0_x = VIC.spr1_x = x;
@@ -102,7 +102,7 @@ void display_update_player() {
         VIC.spr_hi_x &= ~3;
 
     VIC.spr0_y = VIC.spr1_y =
-        46  // ???
+        50  // ???
         + 8 // sprite is in the top 16 pixels
         + game.player.y * 32
         + yoff;
