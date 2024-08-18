@@ -1,15 +1,45 @@
 import sys
 import re
 
-src = ""
+# reverses the bits, from bit twiddling hacks
+reverse = lambda b: (((b * 0x0802 & 0x22110) | (b * 0x8020 & 0x88440)) * 0x10101 >> 16) & 0xFF
 
-for filename in [
-    'room.xbm', 'ullr.xbm', 'urll.xbm', 'ul.xbm', 'lr.xbm', 'ur.xbm', 'll.xbm'
-]:
-    with open(filename, "r") as f:
-        src = src + f.read() 
+def convert_tile(data, tile_number, tiles_per_row):
+    offset = (tile_number // tiles_per_row * tiles_per_row * 8) + \
+        (tile_number % tiles_per_row)
+    for y in range(8):
+        v = data[offset]
+        v = reverse(v)
+        yield v
+        offset = offset + tiles_per_row
 
-mapping = [
+def process(filenames, mapping, tiles_per_row):
+    src = ""
+
+    for filename in filenames:
+        with open(filename, "r") as f:
+            src = src + f.read()
+
+    data = [int(x[2:], base=16) for x in re.findall('0x[0-9A-Fa-f][0-9A-Fa-f]', src)]
+
+    print(",\n".join( \
+        (", ".join(
+            hex(v) for v in convert_tile(data, n, tiles_per_row)
+        ) for n in mapping)
+    ))
+
+print("""\
+#include <stdint.h>
+
+#pragma data-name("CHARMEM")
+
+uint8_t graphics_data[] = {
+""")
+
+process([
+    'room.xbm', 'ullr.xbm', 'urll.xbm', 'ul.xbm',
+    'lr.xbm', 'ur.xbm', 'll.xbm'
+], [
     #  0: Room
     *range(16),
     # 16: Passage ULLR
@@ -20,39 +50,16 @@ mapping = [
     19,
     # 33: Passage URLL continued
     *range(35, 48),
-    # Wall UL, LR
+    # 45: Wall UL, LR
     55, 58, 71, 74,
-    # Wall UR, LL
+    # 49: Wall UR, LL
     86, 91, 102, 107
-]
+], 4)
 
-tiles_per_row = 4
+print(",")
 
-# reverses the bits, from bit twiddling hacks
-reverse = lambda b: (((b * 0x0802 & 0x22110) | (b * 0x8020 & 0x88440)) * 0x10101 >> 16) & 0xFF
-
-def convert(tile_number):
-    offset = (tile_number // tiles_per_row * tiles_per_row * 8) + \
-        (tile_number % tiles_per_row)
-    for y in range(8):
-        v = data[offset]
-        v = reverse(v)
-        yield v
-        offset = offset + tiles_per_row
-
-data = [int(x[2:], base=16) for x in re.findall('0x[0-9A-Fa-f][0-9A-Fa-f]', src)]
-
-print("""\
-#include <stdint.h>
-
-#pragma data-name("CHARMEM")
-
-uint8_t graphics_data[] = {
-""")
-
-print(",\n".join( \
-    (", ".join(hex(v) for v in convert(n)) for n in mapping)
-))
+# 51: wumpus
+process(['wumpus.xbm'], range(4), 2)
 
 print("""\
 };

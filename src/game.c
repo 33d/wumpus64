@@ -9,6 +9,9 @@ static void copy_coord(const struct GameCoord* from, struct GameCoord* to) {
     memcpy(to, from, sizeof(struct GameCoord));
 }
 
+// the spread and navigation functions are recursive
+#pragma static-locals(push, off)
+
 static void navigate_up(struct GameCoord* coord);
 static void navigate_down(struct GameCoord* coord);
 static void navigate_left(struct GameCoord* coord);
@@ -79,6 +82,8 @@ static void spread(const struct GameCoord *coord,
     navigate_right(&next);
     spread(&next, mask, iterations);
 }
+
+#pragma static-locals(pop)
 
 static void random_room(struct GameCoord* coord, uint_fast8_t mask) {
     mask = ~mask;

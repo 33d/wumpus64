@@ -16,14 +16,21 @@ static const uint8_t TILE_URLL[] = {
     32, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 32
 };
 
-static void draw_tile_from_indices(const uint8_t* indices, uint8_t* o) {
+static void draw_tile_from_indices(uint8_t* output, const uint8_t* indices) {
     uint_fast8_t ty, tx;
     uint_fast8_t index = 0, o_offs = 0;
 
     for (ty = 0; ty < 4; ++ty) {
         for (tx = 0; tx < 4; tx++)
-            o[o_offs++] = indices[index++];
+            output[o_offs++] = indices[index++];
         o_offs += 36;
+    }
+}
+
+static void draw_tiles(uint8_t* output, uint_fast8_t output_offset, uint_fast8_t start, uint_fast8_t count) {
+    uint8_t i, end = start + count;
+    for (i = start; i < end; ++i) {
+        output[output_offset++] = i;
     }
 }
 
@@ -33,11 +40,19 @@ static void draw_tile(uint_fast8_t y, uint_fast8_t x) {
     uint_fast8_t tile_type = game.map[y][x];
 
     if (tile_type & MASK_ROOM)
-        draw_tile_from_indices(TILE_ROOM, tile_start);
+        draw_tile_from_indices(tile_start, TILE_ROOM);
     else if (tile_type & MASK_UL)
-        draw_tile_from_indices(TILE_ULLR, tile_start);
+        draw_tile_from_indices(tile_start, TILE_ULLR);
     else if (tile_type & MASK_UR)
-        draw_tile_from_indices(TILE_URLL, tile_start);
+        draw_tile_from_indices(tile_start, TILE_URLL);
+
+    if (tile_type & MASK_WUMPUS) {
+        draw_tiles(tile_start, 41, 54, 2);
+        draw_tiles(tile_start, 81, 56, 2);
+    } else if (tile_type & MASK_BLOOD) {
+        draw_tiles(tile_start, 41, 5, 2);
+        draw_tiles(tile_start, 81, 9, 2);
+    }
 }
 
 void display_draw_map() {
