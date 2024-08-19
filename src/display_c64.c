@@ -121,8 +121,15 @@ void display_update_player() {
 }
 
 void display_update_bats() {
-    draw_sprite(2, &game.bats[0], 0, 0);
-    draw_sprite(4, &game.bats[1], 0, 0);
+    uint_least8_t i;
+    for (i = 0; i < GAME_BATS; i++) {
+        if (game.bats_visible[i])
+            VIC.spr_ena |= 3 << ((i + 1) * 2);
+        else {
+            draw_sprite((i + 1) * 2, &game.bats[i], 0, 0);
+            VIC.spr_ena &= ~(3 << ((i + 1) * 2));
+        }
+    }
 }
 
 void display_init() {
@@ -147,6 +154,6 @@ void display_init() {
     VIC.spr2_color = VIC.spr4_color = COLOR_GRAY3;
     VIC.spr3_color = VIC.spr5_color = COLOR_BLACK;
     
-    // Sprites on
-    VIC.spr_ena = 0x3F;
+    // Player sprite on
+    VIC.spr_ena = 0x3;
 }

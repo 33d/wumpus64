@@ -7,6 +7,7 @@
 
 void main(void) {
     enum InputValue input;
+    enum MoveResult move;
 
     display_init();
     input_init();
@@ -21,10 +22,13 @@ void main(void) {
 
         input = input_next();
         switch (input) {
-            case UP: game_move_up(); break;
-            case DOWN: game_move_down(); break;
-            case LEFT: game_move_left(); break;
-            case RIGHT: game_move_right(); break;
+            case UP: move = game_move_up(); break;
+            case DOWN: move = game_move_down(); break;
+            case LEFT: move = game_move_left(); break;
+            case RIGHT: move = game_move_right(); break;
         }
+
+        if (move == BAT)
+            display_update_bats();
     }
 }

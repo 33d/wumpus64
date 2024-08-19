@@ -35,6 +35,7 @@ struct Game {
     struct GameCoord wumpus;
     struct GameCoord pit[GAME_PITS];
     struct GameCoord bats[GAME_BATS];
+    bool bats_visible[GAME_BATS];
 };
 
 extern struct Game game;

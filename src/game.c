@@ -85,6 +85,9 @@ static void spread(const struct GameCoord *coord,
 
 #pragma static-locals(pop)
 
+/***
+ * @param mask Don't choose rooms with 0 bits set in the mask
+ */
 static void random_room(struct GameCoord* coord, uint_fast8_t mask) {
     mask = ~mask;
     do {
@@ -135,6 +138,9 @@ void game_new(uint_fast8_t room_chance) {
                 game.map[y][x] = MASK_UR;
         }
 
+    for (x = 0; x < GAME_BATS; x++)
+        game.bats_visible[x] = false;
+
     place_wumpus();
     place_pits();
     place_bats();
@@ -151,6 +157,7 @@ bool coords_equal(const struct GameCoord* c1, const struct GameCoord* c2) {
 
 enum MoveResult check_player() {
     struct GameCoord* coord;
+    uint_least8_t i;
 
     if (coords_equal(&game.player, &game.wumpus))
         return WUMPUS;
@@ -160,10 +167,24 @@ enum MoveResult check_player() {
             return PIT;
     }
 
-    for (coord = &(game.bats[0]); coord < &(game.bats[0]) + GAME_BATS; coord++) {
+    for (i = 0; i < GAME_BATS; i++) {
+        coord = &game.bats[i];
         if (coords_equal(&game.player, coord)) {
-            random_room(&game.player, MASK_ROOM | MASK_WUMPUS | MASK_PIT);
-            return MOVED;
+            if (game.bats_visible[i]) {
+                // The second visit to a bat
+                // Move the player, don't transport to the same place
+                do {
+                    // re-use the bat coordinates memory for this
+                    random_room(coord, MASK_ROOM | MASK_WUMPUS | MASK_PIT | MASK_BLOOD | MASK_SLIME);
+                } while (coords_equal(&game.player, coord));
+                copy_coord(coord, &game.player);
+                random_room(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
+                game.bats_visible[i] = false;
+            } else {
+                // The first visit, just show the bat
+                game.bats_visible[i] = true;
+            }
+            return BAT;
         }
     }
 
