@@ -30,6 +30,10 @@ uint8_t sprite_data[] = {
 
 print(convert("player_fg.xbm") + ", 0,")
 print(convert("player_bg.xbm") + ", 0,")
+print(convert("bat_fg.xbm") + ", 0,")
+print(convert("bat_bg.xbm") + ", 0,")
+print(convert("bat_fg.xbm") + ", 0,")
+print(convert("bat_bg.xbm") + ", 0,")
 
 print("""\
 };

@@ -17,6 +17,7 @@ void main(void) {
 
     while(true) {
         display_update_player();
+        display_update_bats();
 
         input = input_next();
         switch (input) {

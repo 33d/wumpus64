@@ -65,8 +65,36 @@ void display_draw_map() {
     }
 }
 
-void display_update_player() {
+static void draw_sprite(
+    uint_least16_t sprite,
+    struct GameCoord* coords,
+    int8_t xoff, int8_t yoff
+) {
     uint_fast16_t x;
+    struct { unsigned char x; unsigned char y; }
+        *fgcoords = &VIC.spr_pos[sprite],
+        *bgcoords = &VIC.spr_pos[sprite + 1];
+
+    x = 24    // ???
+        + 32  // map is offset by 4 tiles
+        + 4   // sprite is centred in its 24 pixels
+        + (uint_fast16_t) coords->x * 32
+        + xoff;
+    fgcoords->x = bgcoords->x = x;
+    // Set the 9th bit of the x coordinate
+    if (x > 255)
+        VIC.spr_hi_x |= (3 << sprite);
+    else
+        VIC.spr_hi_x &= ~(3 << sprite);
+
+    fgcoords->y = bgcoords->y =
+        50  // ???
+        + 8 // sprite is in the top 16 pixels
+        + coords->y * 32
+        + yoff;
+}
+
+void display_update_player() {
     int8_t xoff = 0, yoff = 0;
     uint_fast8_t tile = game_player_tile();
 
@@ -89,23 +117,12 @@ void display_update_player() {
         }
     }
 
-    x = 24    // ???
-        + 32  // map is offset by 4 tiles
-        + 4   // sprite is centred in its 24 pixels
-        + (uint_fast16_t) game.player.x * 32
-        + xoff;
-    VIC.spr0_x = VIC.spr1_x = x;
-    // Set the 9th bit of the x coordinate
-    if (x > 255)
-        VIC.spr_hi_x |= 3;
-    else
-        VIC.spr_hi_x &= ~3;
+    draw_sprite(0, &game.player, xoff, yoff);
+}
 
-    VIC.spr0_y = VIC.spr1_y =
-        50  // ???
-        + 8 // sprite is in the top 16 pixels
-        + game.player.y * 32
-        + yoff;
+void display_update_bats() {
+    draw_sprite(2, &game.bats[0], 0, 0);
+    draw_sprite(4, &game.bats[1], 0, 0);
 }
 
 void display_init() {
@@ -117,11 +134,19 @@ void display_init() {
     // Set the sprite pointers
     *(screenmem + 0x3f8) = sprite_ptr;
     *(screenmem + 0x3f9) = sprite_ptr + 1;
+    *(screenmem + 0x3fa) = sprite_ptr + 2;
+    *(screenmem + 0x3fb) = sprite_ptr + 3;
+    *(screenmem + 0x3fc) = sprite_ptr + 4;
+    *(screenmem + 0x3fd) = sprite_ptr + 5;
 
-    // Sprite colors
+    // Sprite colors for player
     VIC.spr0_color = COLOR_YELLOW;
     VIC.spr1_color = COLOR_BLACK;
 
+    // Sprite colors for bats
+    VIC.spr2_color = VIC.spr4_color = COLOR_GRAY3;
+    VIC.spr3_color = VIC.spr5_color = COLOR_BLACK;
+    
     // Sprites on
-    VIC.spr_ena = 0x3;
+    VIC.spr_ena = 0x3F;
 }
