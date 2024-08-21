@@ -16,42 +16,74 @@ static const uint8_t TILE_URLL[] = {
     32, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 32
 };
 
-static void draw_tile_from_indices(uint8_t* output, const uint8_t* indices) {
+// offsets from top left to colour slime cells
+static const uint8_t SLIME[] = { 1, 2, 40, 41, 42, 43, 80, 81, 82, 83, 121, 122 };
+
+static void draw_tile_from_indices(
+        uint8_t* output, uint8_t* color_output,
+        const uint8_t* indices
+) {
     uint_fast8_t ty, tx;
     uint_fast8_t index = 0, o_offs = 0;
 
     for (ty = 0; ty < 4; ++ty) {
-        for (tx = 0; tx < 4; tx++)
-            output[o_offs++] = indices[index++];
+        for (tx = 0; tx < 4; tx++) {
+            output[o_offs] = indices[index++];
+            color_output[o_offs] = COLOR_GRAY1;
+            ++o_offs;
+        }
         o_offs += 36;
     }
 }
 
-static void draw_tiles(uint8_t* output, uint_fast8_t output_offset, uint_fast8_t start, uint_fast8_t count) {
+static void draw_tiles(
+        uint8_t* output, uint8_t* color_output,
+        uint_fast8_t output_offset,
+        uint_fast8_t start, uint_fast8_t count,
+        uint8_t color
+) {
     uint8_t i, end = start + count;
     for (i = start; i < end; ++i) {
-        output[output_offset++] = i;
+        output[output_offset] = i;
+        color_output[output_offset] = color;
+        ++output_offset;
     }
 }
 
+static void draw_slime(uint8_t* output) {
+    uint8_t i;
+    for (i = 0; i < sizeof(SLIME) / sizeof(uint8_t); i++)
+        output[SLIME[i]] |= 0x40;
+}
+
 static void draw_tile(uint_fast8_t y, uint_fast8_t x) {
-    uint8_t* const tile_start = screenmem + 4 + ((uint16_t) y * 160) + (x * 4);
+    const uint16_t start_offset = 4 + ((uint16_t) y * 160) + (x * 4);
+    uint8_t* const tile_start = screenmem + start_offset;
+    uint8_t* const color_start = COLOR_RAM + start_offset;
     
     uint_fast8_t tile_type = game.map[y][x];
 
     if (tile_type & MASK_ROOM)
-        draw_tile_from_indices(tile_start, TILE_ROOM);
+        draw_tile_from_indices(tile_start, color_start, TILE_ROOM);
     else if (tile_type & MASK_UL)
-        draw_tile_from_indices(tile_start, TILE_ULLR);
+        draw_tile_from_indices(tile_start, color_start, TILE_ULLR);
     else if (tile_type & MASK_UR)
-        draw_tile_from_indices(tile_start, TILE_URLL);
+        draw_tile_from_indices(tile_start, color_start, TILE_URLL);
 
     if (tile_type & MASK_WUMPUS) {
-        draw_tiles(tile_start, 41, 54, 2);
-        draw_tiles(tile_start, 81, 56, 2);
+        draw_tiles(tile_start, color_start, 41, 54, 2, COLOR_RED);
+        draw_tiles(tile_start, color_start, 81, 56, 2, COLOR_RED);
     } else if (tile_type & MASK_BLOOD) {
-        draw_tiles(tile_start, 41, 5, 2);
-        draw_tiles(tile_start, 81, 9, 2);
+        draw_tiles(tile_start, color_start, 41, 5, 2, COLOR_RED);
+        draw_tiles(tile_start, color_start, 81, 9, 2, COLOR_RED);
+    }
+
+    if (tile_type & MASK_SLIME)
+        draw_slime(tile_start);
+
+    if (tile_type & MASK_PIT) {
+        draw_tiles(tile_start, color_start, 41, 5 + 64, 2, COLOR_BLACK);
+        draw_tiles(tile_start, color_start, 81, 9 + 64, 2, COLOR_BLACK);
     }
 }
 
@@ -135,8 +167,17 @@ void display_update_bats() {
 void display_init() {
     const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
 
+    // Extended background mode
+    VIC.ctrl1 = 0x5b;
+    VIC.ctrl2 = 0x08;
+
     // Character memory at $3800
     VIC.addr |= 0xE;
+
+    // Set colours
+    VIC.bordercolor = COLOR_GRAY1;
+    VIC.bgcolor0 = COLOR_GRAY3;
+    VIC.bgcolor1 = COLOR_GREEN;
 
     // Set the sprite pointers
     *(screenmem + 0x3f8) = sprite_ptr;

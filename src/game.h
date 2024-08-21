@@ -7,7 +7,7 @@
 #define GAME_WIDTH 8
 #define GAME_HEIGHT 6
 #define GAME_BATS 2
-#define GAME_PITS 2
+#define GAME_PITS 1
 
 #define MASK_ROOM 1
 #define MASK_UL 2
