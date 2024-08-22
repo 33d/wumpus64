@@ -2,6 +2,7 @@
 #include "sys_c64.h"
 #include "display.h"
 
+#include <string.h>
 #include <c64.h>
 
 #define PASSAGE_OFFSET 6
@@ -166,6 +167,7 @@ void display_update_bats() {
 
 void display_init() {
     const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
+    uint8_t* ptr = screenmem;
 
     // Extended background mode
     VIC.ctrl1 = 0x5b;
@@ -174,10 +176,31 @@ void display_init() {
     // Character memory at $3800
     VIC.addr |= 0xE;
 
+    // Copy characters from rom
+    *((uint8_t*) 1) &= ~4; // map character rom
+    // Upper case
+    memcpy((uint8_t*) 0x3800 + 65 * 8, (uint8_t*) 0xD000 + (256 + 65) * 8, 26 * 8);
+    // Lower case
+    memcpy((uint8_t*) 0x3800 + 97 * 8, (uint8_t*) 0xD000 + (256 + 1) * 8, 26 * 8);
+    // Digits
+    memcpy((uint8_t*) 0x3800 + 128 * 8, (uint8_t*) 0xD000 + (256 + 48) * 8, 10 * 8);
+    *((uint8_t*) 1) |= 4; // map I/O space
+    *((uint8_t*) 0x400 + (40 * 24)) = 65; // Draw some text
+
     // Set colours
     VIC.bordercolor = COLOR_GRAY1;
+    // Default background colour
     VIC.bgcolor0 = COLOR_GRAY3;
+    // The slime colour
     VIC.bgcolor1 = COLOR_GREEN;
+    // The space down the sides
+    VIC.bgcolor3 = COLOR_GRAY1;
+
+    // Fill in the sides of the screen
+    memset(ptr, 32 + 192, 4);
+    for (ptr += 36; ptr < screenmem + 996; ptr += 40)
+        memset(ptr, 32 + 192, 8);
+    memset(ptr, 32 + 192, 4);
 
     // Set the sprite pointers
     *(screenmem + 0x3f8) = sprite_ptr;
