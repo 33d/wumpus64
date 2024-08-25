@@ -1,5 +1,6 @@
 src/*.o
 src/*.asm
+src/wumpus.lbl
 src/wumpus.map
 src/wumpus.prg
 images/*.xbm

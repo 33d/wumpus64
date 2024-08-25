@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <c64.h>
+#include <6502.h>
 
 #define PASSAGE_OFFSET 6
 
@@ -165,18 +166,100 @@ void display_update_bats() {
     }
 }
 
+void raster_interrupt_1();
+void raster_interrupt_2();
+
+void raster_interrupt_1() {
+    __asm__("pha");
+    __asm__("lda %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
+    __asm__("and #$BF");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
+    __asm__("lda #251");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
+    // Reset interrupt flag
+    __asm__("lda #$FF");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
+    __asm__("lda #<(%v)", raster_interrupt_2);
+    __asm__("sta $0314");
+    __asm__("lda #>(%v)", raster_interrupt_2);
+    __asm__("sta $0315");
+    __asm__("pla");
+    // Jump back to the kernal interrupt handler
+    __asm__("jmp $ea31");
+}
+
+void raster_interrupt_2() {
+    __asm__("pha");
+    __asm__("lda %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
+    __asm__("ora #$40");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
+    __asm__("lda #242");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
+    // Reset interrupt flag
+    __asm__("lda #$FF");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
+    __asm__("lda #<(%v)", raster_interrupt_1);
+    __asm__("sta $0314");
+    __asm__("lda #>(%v)", raster_interrupt_1);
+    __asm__("sta $0315");
+    __asm__("pla");
+    // Jump back to the kernal interrupt handler
+    __asm__("jmp $ea31");
+}
+
+void init_raster_interrupt() {
+    __asm__("sei");
+
+    // Disable CIA interrupts
+    __asm__("lda #$7F");
+    __asm__("sta %w+%b", (uint16_t) &CIA1, offsetof(struct __6526, icr));
+    __asm__("sta %w+%b", (uint16_t) &CIA2, offsetof(struct __6526, icr));
+
+    // Clear VIC interrupt flag
+    __asm__("and %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
+
+    // Acknowledge CIA interrupts
+    __asm__("sta %w+%b", (uint16_t) &CIA1, offsetof(struct __6526, icr));
+    __asm__("sta %w+%b", (uint16_t) &CIA2, offsetof(struct __6526, icr));
+
+    // Set scanline
+    __asm__("lda #242");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
+
+    // Set interrupt routine
+    __asm__("lda #<(%v)", raster_interrupt_1);
+    __asm__("sta $0314");
+    __asm__("lda #>(%v)", raster_interrupt_1);
+    __asm__("sta $0315");
+
+    // Raster interrupts on
+    __asm__("lda #1");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, imr));
+
+    __asm__("cli");
+}
+
+typedef void (*void_func) (void);
+
 void display_init() {
     const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
     uint8_t* ptr = screenmem;
 
-    // Extended background mode
+    // Extended background mode, and set raster interrupt high bit
     VIC.ctrl1 = 0x5b;
     VIC.ctrl2 = 0x08;
 
     // Character memory at $3800
     VIC.addr |= 0xE;
 
+    init_raster_interrupt();
+
     // Copy characters from rom
+    // Disable interrupts, otherwise the game doesn't always start. I suspect
+    // the kernal interrupt handler expects to see I/O devices but finds
+    // the character rom instead.
+    SEI();
     *((uint8_t*) 1) &= ~4; // map character rom
     // Upper case
     memcpy((uint8_t*) 0x3800 + 65 * 8, (uint8_t*) 0xD000 + (256 + 65) * 8, 26 * 8);
@@ -184,8 +267,10 @@ void display_init() {
     memcpy((uint8_t*) 0x3800 + 97 * 8, (uint8_t*) 0xD000 + (256 + 1) * 8, 26 * 8);
     // Digits
     memcpy((uint8_t*) 0x3800 + 128 * 8, (uint8_t*) 0xD000 + (256 + 48) * 8, 10 * 8);
+    // Filled character for the left/right border on the bottom line
+    memset((uint8_t*) 0x3800 + 127 * 8, 0xFF, 8);
     *((uint8_t*) 1) |= 4; // map I/O space
-    *((uint8_t*) 0x400 + (40 * 24)) = 65; // Draw some text
+    CLI();
 
     // Set colours
     VIC.bordercolor = COLOR_GRAY1;
@@ -198,9 +283,15 @@ void display_init() {
 
     // Fill in the sides of the screen
     memset(ptr, 32 + 192, 4);
-    for (ptr += 36; ptr < screenmem + 996; ptr += 40)
+    for (ptr += 36; ptr < screenmem + 996 - 40; ptr += 40)
         memset(ptr, 32 + 192, 8);
     memset(ptr, 32 + 192, 4);
+    // The last line uses standard character mode
+    memset(screenmem + 40 * 24, 127, 4);
+    memset(screenmem + 40 * 24 + 36, 127, 4);
+    // Set the colours for the last line
+    memset(COLOR_RAM + 40 * 24, COLOR_GRAY1, 4);
+    memset(COLOR_RAM + 40 * 24 + 36, COLOR_GRAY1, 4);
 
     // Set the sprite pointers
     *(screenmem + 0x3f8) = sprite_ptr;
