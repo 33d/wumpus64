@@ -161,18 +161,6 @@ static void check_player() {
     struct GameCoord* coord;
     uint_least8_t i;
 
-    if (coords_equal(&game.player, &game.wumpus)) {
-        game.state = WUMPUS;
-        return;
-    }
-
-    for (coord = &(game.pit[0]); coord < &(game.pit[0]) + GAME_PITS; coord++) {
-        if (coords_equal(&game.player, coord)) {
-            game.state = PIT;
-            return;
-        }
-    }
-
     for (i = 0; i < GAME_BATS; i++) {
         coord = &game.bats[i];
         if (coords_equal(&game.player, coord)) {
@@ -191,6 +179,17 @@ static void check_player() {
                 game.bats_visible[i] = true;
             }
             game.state = BAT;
+        }
+    }
+
+    if (coords_equal(&game.player, &game.wumpus)) {
+        game.state = WUMPUS;
+        return;
+    }
+
+    for (coord = &(game.pit[0]); coord < &(game.pit[0]) + GAME_PITS; coord++) {
+        if (coords_equal(&game.player, coord)) {
+            game.state = PIT;
             return;
         }
     }
