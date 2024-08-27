@@ -14,7 +14,7 @@ enum InputValue input_next() {
     // Wait for the joystick to be centred
     do {
         value = joy_read(JOY_2);
-    } while (value & (JOY_UP_MASK | JOY_DOWN_MASK | JOY_LEFT_MASK | JOY_RIGHT_MASK));
+    } while (value & (JOY_UP_MASK | JOY_DOWN_MASK | JOY_LEFT_MASK | JOY_RIGHT_MASK | JOY_BTN_1_MASK));
 
     while (1) {
         r = NONE;
