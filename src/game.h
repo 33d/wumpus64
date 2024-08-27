@@ -49,5 +49,6 @@ void game_move_down();
 void game_move_left();
 void game_move_right();
 void game_button();
+bool game_over();
 
 #endif

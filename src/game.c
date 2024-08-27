@@ -209,12 +209,12 @@ static bool is_tile(struct GameCoord* coord, uint_fast8_t mask) {
     return (game.map[coord->y][coord->x] & mask) != 0;
 }
 
-static bool is_game_active() {
-    return (game.state != WON && game.state != PIT && game.state != WUMPUS);
+bool game_over() {
+    return (game.state == WON || game.state == PIT || game.state == WUMPUS);
 }
 
 void game_move_up() {
-    if (!is_game_active())
+    if (game_over())
         return;
 
     if (game.state == FIRING) {
@@ -233,7 +233,7 @@ void game_move_up() {
 }
 
 void game_move_down() {
-    if (!is_game_active())
+    if (game_over())
         return;
 
     if (game.state == FIRING) {
@@ -254,7 +254,7 @@ void game_move_down() {
 void game_move_left() {
     uint_fast8_t tile;
 
-    if (!is_game_active())
+    if (game_over())
         return;
 
     if (game.state == FIRING) {
@@ -276,7 +276,7 @@ void game_move_left() {
 void game_move_right() {
     uint_fast8_t tile;
 
-    if (!is_game_active())
+    if (game_over())
         return;
 
     if (game.state == FIRING) {

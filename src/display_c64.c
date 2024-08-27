@@ -31,6 +31,12 @@ static const uint8_t TILE_URLL[] = {
 // offsets from top left to colour slime cells
 static const uint8_t SLIME[] = { 1, 2, 40, 41, 42, 43, 80, 81, 82, 83, 121, 122 };
 
+void display_new() {
+    uint8_t* line = screenmem + (24 * 40) + 4;
+    for (; line > screenmem; line -= 40)
+        memset(line, 32, 32);
+}
+
 static void draw_tile_from_indices(
         uint8_t* output, uint8_t* color_output,
         const uint8_t* indices
@@ -99,16 +105,6 @@ static void draw_tile(uint_fast8_t y, uint_fast8_t x) {
     }
 }
 
-void display_draw_map() {
-    uint_fast8_t y, x;
-
-    for (y = 0; y < GAME_HEIGHT; y++) {
-        for (x = 0; x < GAME_WIDTH; x++) {
-            draw_tile(y, x);
-        }
-    }
-}
-
 static void draw_sprite(
     uint_least16_t sprite,
     struct GameCoord* coords,
@@ -142,6 +138,8 @@ void display_update_player() {
     int8_t xoff = 0, yoff = 0;
     uint_fast8_t tile = game_player_tile();
 
+    draw_tile(game.player.y, game.player.x);
+
     // If the player is in a passage, move to one side
     if (tile & MASK_UL) {
         if (game.passage_up) {
@@ -174,6 +172,20 @@ void display_update_bats() {
             VIC.spr_ena &= ~(3 << ((i + 1) * 2));
         }
     }
+}
+
+void display_draw_map() {
+    uint_fast8_t y, x;
+
+    for (y = 0; y < GAME_HEIGHT; y++) {
+        for (x = 0; x < GAME_WIDTH; x++) {
+            draw_tile(y, x);
+        }
+    }
+
+    for (y = 0; y < GAME_BATS; ++y)
+        game.bats_visible[y] = true;
+    display_update_bats();
 }
 
 void display_update_message() {
