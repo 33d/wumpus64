@@ -186,13 +186,25 @@ void display_update_message() {
         linestart[i] = i + offsets[0];
 }
 
+#pragma optimize(push, off);
+
 void raster_interrupt_1();
 void raster_interrupt_2();
 
 void raster_interrupt_1() {
     __asm__("pha");
-    __asm__("lda %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
-    __asm__("and #$BF");
+    // Delay 38 cycles - that seems to be enough to get the screen mode
+    // to change during a border. I can't explain this number - maybe
+    // it's a badline, and the interrupt is actually at the start of the
+    // previous line.
+    __asm__("lda ($0, X)"); // 6
+    __asm__("lda ($0, X)"); // 6
+    __asm__("lda ($0, X)"); // 6
+    __asm__("lda ($0, X)"); // 6
+    __asm__("lda ($0, X)"); // 6
+    __asm__("lda ($0, X)"); // 6
+    __asm__("nop"); // 2
+    __asm__("lda #$1b");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
     __asm__("lda #251");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
@@ -200,18 +212,16 @@ void raster_interrupt_1() {
     __asm__("lda #$FF");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
     __asm__("lda #<(%v)", raster_interrupt_2);
-    __asm__("sta $0314");
+    __asm__("sta $FFFE");
     __asm__("lda #>(%v)", raster_interrupt_2);
-    __asm__("sta $0315");
+    __asm__("sta $FFFF");
     __asm__("pla");
-    // Jump back to the kernal interrupt handler
-    __asm__("jmp $ea31");
+    __asm__("rti");
 }
 
 void raster_interrupt_2() {
     __asm__("pha");
-    __asm__("lda %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
-    __asm__("ora #$40");
+    __asm__("lda #$5b");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
     __asm__("lda #242");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
@@ -219,16 +229,21 @@ void raster_interrupt_2() {
     __asm__("lda #$FF");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
     __asm__("lda #<(%v)", raster_interrupt_1);
-    __asm__("sta $0314");
+    __asm__("sta $FFFE");
     __asm__("lda #>(%v)", raster_interrupt_1);
-    __asm__("sta $0315");
+    __asm__("sta $FFFF");
     __asm__("pla");
-    // Jump back to the kernal interrupt handler
-    __asm__("jmp $ea31");
+    __asm__("rti");
 }
 
 void init_raster_interrupt() {
     __asm__("sei");
+
+    // Kernal ROM off
+    __asm__("lda #%b", ~0x07);
+    __asm__("and 1");
+    __asm__("ora #$05");
+    __asm__("sta 1");
 
     // Disable CIA interrupts
     __asm__("lda #$7F");
@@ -249,9 +264,9 @@ void init_raster_interrupt() {
 
     // Set interrupt routine
     __asm__("lda #<(%v)", raster_interrupt_1);
-    __asm__("sta $0314");
+    __asm__("sta $FFFE");
     __asm__("lda #>(%v)", raster_interrupt_1);
-    __asm__("sta $0315");
+    __asm__("sta $FFFF");
 
     // Raster interrupts on
     __asm__("lda #1");
@@ -259,6 +274,8 @@ void init_raster_interrupt() {
 
     __asm__("cli");
 }
+
+#pragma optimize(pop);
 
 typedef void (*void_func) (void);
 
