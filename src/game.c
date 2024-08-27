@@ -161,6 +161,9 @@ static void check_player() {
     struct GameCoord* coord;
     uint_least8_t i;
 
+    // The state might be BAT
+    game.state = MOVING;
+
     for (i = 0; i < GAME_BATS; i++) {
         coord = &game.bats[i];
         if (coords_equal(&game.player, coord)) {
@@ -293,7 +296,7 @@ void game_move_right() {
 }
 
 void game_button() {
-    if (game.state != MOVING)
+    if (game.state != MOVING && game.state != BAT)
         return;
 
     game.state = FIRING;
