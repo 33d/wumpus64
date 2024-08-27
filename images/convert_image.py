@@ -58,8 +58,17 @@ process([
 
 print(",")
 
-# 51: wumpus
+# 53: wumpus
 process(['wumpus.xbm'], range(4), 2)
+
+print(",")
+
+# 55-63: blank
+for n in range(57, 63):
+    print("0, 0, 0, 0, 0, 0, 0, 0,")
+
+# 64: text
+process(['text.xbm'], range(192), 192)
 
 print("""\
 };

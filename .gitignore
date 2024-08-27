@@ -6,4 +6,5 @@ src/wumpus.prg
 images/*.xbm
 !images/wumpus.xbm
 !images/player_*.xbm
+!images/text.xbm
 .vscode

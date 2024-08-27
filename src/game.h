@@ -19,8 +19,8 @@
 #define MASK_VISIBLE_DOWN 64
 #define MASK_VISIBLE 128
 
-enum MoveResult {
-    NOTHING, MOVED, BAT, PIT, WUMPUS
+enum GameState {
+    MOVING, BAT, FIRING, WON, WUMPUS, PIT
 };
 
 struct GameCoord {
@@ -29,6 +29,7 @@ struct GameCoord {
 
 struct Game {
     uint_fast8_t map[GAME_HEIGHT][GAME_WIDTH];
+    enum GameState state;
     struct GameCoord player;
     // If the player is in passage, are they in the one that leads up?
     bool passage_up;
@@ -43,9 +44,10 @@ extern struct Game game;
 void game_new(uint_fast8_t room_chance);
 uint_fast8_t game_player_tile();
 
-enum MoveResult game_move_up();
-enum MoveResult game_move_down();
-enum MoveResult game_move_left();
-enum MoveResult game_move_right();
+void game_move_up();
+void game_move_down();
+void game_move_left();
+void game_move_right();
+void game_button();
 
 #endif

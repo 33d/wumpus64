@@ -5,5 +5,6 @@ void display_init();
 void display_draw_map();
 void display_update_player();
 void display_update_bats();
+void display_update_message();
 
 #endif

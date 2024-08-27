@@ -8,6 +8,16 @@
 
 #define PASSAGE_OFFSET 6
 
+// The messages in order of the GameState enum
+static const uint8_t MESSAGES[][2] = {
+    { 0, 0 },
+    { 0, 0 },
+    { 64, 12 },
+    { 91, 13 },
+    { 76, 15 },
+    { 104, 12 }
+};
+
 static const uint8_t TILE_ROOM[] = {
     0, 1, 2, 3, 4, 32, 32, 7, 8, 32, 32, 11, 12, 13, 14, 15
 };
@@ -166,6 +176,16 @@ void display_update_bats() {
     }
 }
 
+void display_update_message() {
+    const uint8_t* offsets = MESSAGES[game.state];
+    uint8_t* linestart = screenmem + (40 * 24) + 4;
+    uint8_t i;
+    // fill the line with spaces
+    memset(linestart, 32, 32);
+    for (i = 0; i < offsets[1]; ++i)
+        linestart[i] = i + offsets[0];
+}
+
 void raster_interrupt_1();
 void raster_interrupt_2();
 
@@ -255,23 +275,6 @@ void display_init() {
 
     init_raster_interrupt();
 
-    // Copy characters from rom
-    // Disable interrupts, otherwise the game doesn't always start. I suspect
-    // the kernal interrupt handler expects to see I/O devices but finds
-    // the character rom instead.
-    SEI();
-    *((uint8_t*) 1) &= ~4; // map character rom
-    // Upper case
-    memcpy((uint8_t*) 0x3800 + 65 * 8, (uint8_t*) 0xD000 + (256 + 65) * 8, 26 * 8);
-    // Lower case
-    memcpy((uint8_t*) 0x3800 + 97 * 8, (uint8_t*) 0xD000 + (256 + 1) * 8, 26 * 8);
-    // Digits
-    memcpy((uint8_t*) 0x3800 + 128 * 8, (uint8_t*) 0xD000 + (256 + 48) * 8, 10 * 8);
-    // Filled character for the left/right border on the bottom line
-    memset((uint8_t*) 0x3800 + 127 * 8, 0xFF, 8);
-    *((uint8_t*) 1) |= 4; // map I/O space
-    CLI();
-
     // Set colours
     VIC.bordercolor = COLOR_GRAY1;
     // Default background colour
@@ -287,11 +290,12 @@ void display_init() {
         memset(ptr, 32 + 192, 8);
     memset(ptr, 32 + 192, 4);
     // The last line uses standard character mode
-    memset(screenmem + 40 * 24, 127, 4);
-    memset(screenmem + 40 * 24 + 36, 127, 4);
+    memset(screenmem + 40 * 24, 255, 4);
+    memset(screenmem + 40 * 24 + 36, 255, 4);
+    // Fill the rest with spaces
+    memset(screenmem + 40 * 24 + 4, 32, 4);
     // Set the colours for the last line
-    memset(COLOR_RAM + 40 * 24, COLOR_GRAY1, 4);
-    memset(COLOR_RAM + 40 * 24 + 36, COLOR_GRAY1, 4);
+    memset(COLOR_RAM + 40 * 24, COLOR_GRAY1, 40);
 
     // Set the sprite pointers
     *(screenmem + 0x3f8) = sprite_ptr;

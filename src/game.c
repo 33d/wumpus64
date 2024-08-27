@@ -145,26 +145,32 @@ void game_new(uint_fast8_t room_chance) {
     place_pits();
     place_bats();
     place_player();
+
+    game.state = MOVING;
 }
 
 uint_fast8_t game_player_tile() {
     return game.map[game.player.y][game.player.x];
 }
 
-bool coords_equal(const struct GameCoord* c1, const struct GameCoord* c2) {
+static bool coords_equal(const struct GameCoord* c1, const struct GameCoord* c2) {
     return c1->x == c2->x && c1->y == c2->y;
 }
 
-enum MoveResult check_player() {
+static void check_player() {
     struct GameCoord* coord;
     uint_least8_t i;
 
-    if (coords_equal(&game.player, &game.wumpus))
-        return WUMPUS;
+    if (coords_equal(&game.player, &game.wumpus)) {
+        game.state = WUMPUS;
+        return;
+    }
 
     for (coord = &(game.pit[0]); coord < &(game.pit[0]) + GAME_PITS; coord++) {
-        if (coords_equal(&game.player, coord))
-            return PIT;
+        if (coords_equal(&game.player, coord)) {
+            game.state = PIT;
+            return;
+        }
     }
 
     for (i = 0; i < GAME_BATS; i++) {
@@ -184,59 +190,96 @@ enum MoveResult check_player() {
                 // The first visit, just show the bat
                 game.bats_visible[i] = true;
             }
-            return BAT;
+            game.state = BAT;
+            return;
         }
     }
-
-    return MOVED;
 }
 
-bool is_tile(struct GameCoord* coord, uint_fast8_t mask) {
+static void fire(void (*dir_function)(struct GameCoord* coord)) {
+    struct GameCoord coord;
+    copy_coord(&game.player, &coord);
+    dir_function(&coord);
+    game.state = coords_equal(&coord, &game.wumpus) ? WON : WUMPUS;
+}
+
+static bool is_tile(struct GameCoord* coord, uint_fast8_t mask) {
     return (game.map[coord->y][coord->x] & mask) != 0;
 }
 
-enum MoveResult game_move_up() {
+void game_move_up() {
+    if (game.state == FIRING) {
+        fire(navigate_up);
+        return;
+    }
+
     // The only time we can't move is in a passage entered from the bottom
     if (!game.passage_up && is_tile(&game.player, MASK_UL | MASK_UR))
-        return NOTHING;
+        return;
 
     game.player.y = (game.player.y == 0) ? GAME_HEIGHT - 1 : game.player.y - 1;
     game.passage_up = false;
 
-    return check_player();
+    check_player();
 }
 
-enum MoveResult game_move_down() {
+void game_move_down() {
+    if (game.state == FIRING) {
+        fire(navigate_down);
+        return;
+    }
+
     // The only time we can't move is in a passage entered from the top
     if (game.passage_up && is_tile(&game.player, MASK_UL | MASK_UR))
-        return NOTHING;
+        return;
 
     game.player.y = (game.player.y == GAME_HEIGHT - 1) ? 0 : game.player.y + 1;
     game.passage_up = true;
 
-    return check_player();
+    check_player();
 }
 
-enum MoveResult game_move_left() {
-    uint_fast8_t tile = game_player_tile();
+void game_move_left() {
+    uint_fast8_t tile;
+
+    if (game.state == FIRING) {
+        fire(navigate_left);
+        return;
+    }
+
+    tile = game_player_tile();
     if ((game.passage_up && (tile & MASK_UR)) || (!game.passage_up && (tile & MASK_UL)))
-        return NOTHING;
+        return;
 
     game.player.x = (game.player.x == 0) ? GAME_WIDTH - 1 : game.player.x - 1;
     tile = game_player_tile();
     game.passage_up = (tile & MASK_UR) != 0;
 
-    return check_player();
+    check_player();
 }
 
-enum MoveResult game_move_right() {
-    uint_fast8_t tile = game_player_tile();
+void game_move_right() {
+    uint_fast8_t tile;
+
+    if (game.state == FIRING) {
+        fire(navigate_right);
+        return;
+    }
+
+    tile = game_player_tile();
     if ((game.passage_up && (tile & MASK_UL)) || (!game.passage_up && (tile & MASK_UR)))
-        return NOTHING;
+        return;
 
     game.player.x = (game.player.x == GAME_WIDTH - 1) ? 0 : game.player.x + 1;
     tile = game_player_tile();
     game.passage_up = (tile & MASK_UL) != 0;
 
-    return check_player();
+    check_player();
+}
+
+void game_button() {
+    if (game.state != MOVING)
+        return;
+
+    game.state = FIRING;
 }
