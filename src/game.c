@@ -164,6 +164,14 @@ static void check_player() {
     // The state might be BAT
     game.state = MOVING;
 
+    // Update the visibility of passages
+    i = game.map[game.player.y][game.player.x];
+    if ((i & MASK_ROOM) == 0) {
+        game.map[game.player.y][game.player.x] |=
+            game.passage_up
+                ? MASK_VISIBLE : MASK_VISIBLE_DOWN;
+    }
+
     for (i = 0; i < GAME_BATS; i++) {
         coord = &game.bats[i];
         if (coords_equal(&game.player, coord)) {

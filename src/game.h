@@ -16,7 +16,7 @@
 #define MASK_BLOOD 16
 #define MASK_PIT 32
 #define MASK_SLIME 64
-#define MASK_VISIBLE_DOWN 64
+#define MASK_VISIBLE_DOWN 8
 #define MASK_VISIBLE 128
 
 enum GameState {

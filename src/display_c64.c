@@ -21,8 +21,20 @@ static const uint8_t MESSAGES[][2] = {
 static const uint8_t TILE_ROOM[] = {
     0, 1, 2, 3, 4, 32, 32, 7, 8, 32, 32, 11, 12, 13, 14, 15
 };
+static const uint8_t TILE_UL[] = {
+    16, 17, 18, 32, 19, 20, 46, 32, 23, 47, 32, 32, 32, 32, 32, 32
+};
+static const uint8_t TILE_UR[] = {
+    32, 30, 31, 33, 32, 48, 36, 37, 32, 32, 49, 41, 32, 32, 32, 32
+};
 static const uint8_t TILE_ULLR[] = {
     16, 17, 18, 32, 19, 20, 21, 22, 23, 24, 25, 26, 32, 27, 28, 29
+};
+static const uint8_t TILE_LL[] = {
+    32, 32, 32, 32, 34, 50, 32, 32, 38, 39, 51, 32, 42, 43, 44, 32
+};
+static const uint8_t TILE_LR[] = {
+    32, 32, 32, 32, 32, 32, 52, 22, 32, 53, 25, 26, 32, 27, 28, 29
 };
 static const uint8_t TILE_URLL[] = {
     32, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 32
@@ -83,12 +95,25 @@ static void draw_tile(uint_fast8_t y, uint_fast8_t x) {
 
     if (tile_type & MASK_ROOM)
         draw_tile_from_indices(tile_start, color_start, TILE_ROOM);
-    else if (tile_type & MASK_UL)
-        draw_tile_from_indices(tile_start, color_start, TILE_ULLR);
-    else if (tile_type & MASK_UR)
-        draw_tile_from_indices(tile_start, color_start, TILE_URLL);
+    else if (tile_type & MASK_UL) {
+        if (game_over() || (tile_type & (MASK_VISIBLE | MASK_VISIBLE_DOWN)) == (MASK_VISIBLE | MASK_VISIBLE_DOWN))
+            draw_tile_from_indices(tile_start, color_start, TILE_ULLR);
+        else if (tile_type & (MASK_VISIBLE))
+            draw_tile_from_indices(tile_start, color_start, TILE_UL);
+        else
+            draw_tile_from_indices(tile_start, color_start, TILE_LR);
+    } else if (tile_type & MASK_UR) {
+        if (game_over() || (tile_type & (MASK_VISIBLE | MASK_VISIBLE_DOWN)) == (MASK_VISIBLE | MASK_VISIBLE_DOWN))
+            draw_tile_from_indices(tile_start, color_start, TILE_URLL);
+        else if (tile_type & (MASK_VISIBLE))
+            draw_tile_from_indices(tile_start, color_start, TILE_UR);
+        else
+            draw_tile_from_indices(tile_start, color_start, TILE_LL);
+    }
 
-    if (tile_type & MASK_WUMPUS) {
+    // The WUMPUS bit is shared with the corridor VISIBLE_DOWN bit,
+    // so check the ROOM bit too
+    if ((tile_type & (MASK_ROOM | MASK_WUMPUS)) == (MASK_ROOM | MASK_WUMPUS)) {
         draw_tiles(tile_start, color_start, 41, 54, 2, COLOR_RED);
         draw_tiles(tile_start, color_start, 81, 56, 2, COLOR_RED);
     } else if (tile_type & MASK_BLOOD) {

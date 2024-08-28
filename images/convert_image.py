@@ -38,7 +38,7 @@ uint8_t graphics_data[] = {
 
 process([
     'room.xbm', 'ullr.xbm', 'urll.xbm', 'ul.xbm',
-    'lr.xbm', 'ur.xbm', 'll.xbm'
+    'ur.xbm', 'll.xbm', 'lr.xbm'
 ], [
     #  0: Room
     *range(16),
@@ -50,10 +50,10 @@ process([
     19,
     # 33: Passage URLL continued
     *range(35, 48),
-    # 45: Wall UL, LR
-    55, 58, 71, 74,
-    # 49: Wall UR, LL
-    86, 91, 102, 107
+    # 46: Wall UL, UR
+    54, 57, 69, 74,
+    # 50: Wall LL, LR
+    85, 90, 102, 105
 ], 4)
 
 print(",")
