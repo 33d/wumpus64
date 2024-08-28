@@ -126,20 +126,23 @@ static void place_player() {
     random_room(&game.player, MASK_ROOM);
 }
 
-void game_new(uint_fast8_t room_chance) {
-    uint_fast8_t x, y;
-    for (y = 0; y < GAME_HEIGHT; y++)
-        for (x = 0; x < GAME_WIDTH; x++) {
-            if ((rand() & 0xFF) < room_chance)
-                game.map[y][x] = MASK_ROOM;
-            else if ((rand() & 0xFF) < 128)
-                game.map[y][x] = MASK_UL;
-            else
-                game.map[y][x] = MASK_UR;
-        }
+void game_new(uint_fast8_t room_count) {
+    struct GameCoord coord;
 
-    for (x = 0; x < GAME_BATS; x++)
-        game.bats_visible[x] = false;
+    // Fill the map with random corridors
+    for (coord.y = 0; coord.y < GAME_HEIGHT; ++coord.y)
+        for (coord.x = 0; coord.x < GAME_WIDTH; ++coord.x)
+            game.map[coord.y][coord.x] = (rand() & 1)
+                ? MASK_UL : MASK_UR;
+
+    // Place the rooms
+    do {
+        random_room(&coord, MASK_UL | MASK_UR);
+        game.map[coord.y][coord.x] = MASK_ROOM;
+    } while (--room_count > 0);
+
+    for (coord.x = 0; coord.x < GAME_BATS; coord.x++)
+        game.bats_visible[coord.x] = false;
 
     place_wumpus();
     place_pits();

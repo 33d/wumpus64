@@ -6,7 +6,7 @@
 #include "input.h"
 
 static void new_game() {
-    game_new(128);
+    game_new(19);
     display_new();
 }
 
