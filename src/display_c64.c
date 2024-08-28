@@ -225,6 +225,10 @@ void display_update_message() {
 
 #pragma optimize(push, off);
 
+void nmi_handler() {
+    __asm__("rti");
+}
+
 void raster_interrupt_1();
 void raster_interrupt_2();
 
@@ -298,6 +302,12 @@ void init_raster_interrupt() {
     // Set scanline
     __asm__("lda #242");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
+
+    // Stop the RESTORE key crashing the program
+    __asm__("lda #<(%v)", nmi_handler);
+    __asm__("sta $FFFA");
+    __asm__("lda #>(%v)", nmi_handler);
+    __asm__("sta $FFFB");
 
     // Set interrupt routine
     __asm__("lda #<(%v)", raster_interrupt_1);
