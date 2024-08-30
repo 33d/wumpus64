@@ -123,7 +123,7 @@ else
 endif
 
 .c.o:
-	$(CL) -c -t $(SYS) -Osir -T -Werror --static-locals -g -o $@ -l $(@:.o=.asm) $<
+	$(CL) -c -t $(SYS) -Osir -T -Werror -W-struct-param --static-locals -g -o $@ -l $(@:.o=.asm) $<
 
 clean:
 	@$(DEL) $(EXELIST_$(SYS)) 2>$(NULLDEV)

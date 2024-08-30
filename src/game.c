@@ -126,20 +126,66 @@ static void place_player() {
     random_room(&game.player, MASK_ROOM);
 }
 
+#pragma static-locals(push, off)
+
+static void count_reachable(struct GameCoord coord, uint_least8_t* count) {
+    struct GameCoord newCoord;
+
+    // If we've already visited this room, stop
+    if (game.map[coord.y][coord.x] & MASK_VISIBLE)
+        return;
+
+    ++(*count);
+    game.map[coord.y][coord.x] |= MASK_VISIBLE;
+
+    newCoord = coord;
+    navigate_left(&newCoord);
+    count_reachable(newCoord, count);
+
+    newCoord = coord;
+    navigate_right(&newCoord);
+    count_reachable(newCoord, count);
+
+    newCoord = coord;
+    navigate_up(&newCoord);
+    count_reachable(newCoord, count);
+
+    newCoord = coord;
+    navigate_down(&newCoord);
+    count_reachable(newCoord, count);
+}
+
+#pragma static-locals(pop)
+
+static bool check_reachable(struct GameCoord* start, uint_least8_t expected) {
+    uint_least8_t x, y, count = 0;
+
+    count_reachable(*start, &count);
+
+    for (y = 0; y < GAME_HEIGHT; ++y)
+        for (x = 0; x < GAME_WIDTH; ++x)
+            game.map[y][x] &= ~MASK_VISIBLE;
+
+    return count == expected;
+}
+
 void game_new(uint_fast8_t room_count) {
     struct GameCoord coord;
+    uint_least8_t i;
 
-    // Fill the map with random corridors
-    for (coord.y = 0; coord.y < GAME_HEIGHT; ++coord.y)
-        for (coord.x = 0; coord.x < GAME_WIDTH; ++coord.x)
-            game.map[coord.y][coord.x] = (rand() & 1)
-                ? MASK_UL : MASK_UR;
-
-    // Place the rooms
     do {
-        random_room(&coord, MASK_UL | MASK_UR);
-        game.map[coord.y][coord.x] = MASK_ROOM;
-    } while (--room_count > 0);
+        // Fill the map with random corridors
+        for (coord.y = 0; coord.y < GAME_HEIGHT; ++coord.y)
+            for (coord.x = 0; coord.x < GAME_WIDTH; ++coord.x)
+                game.map[coord.y][coord.x] = (rand() & 1)
+                    ? MASK_UL : MASK_UR;
+
+        // Place the rooms
+        for (i = 0; i < room_count; ++i) {
+            random_room(&coord, MASK_UL | MASK_UR);
+            game.map[coord.y][coord.x] = MASK_ROOM;
+        };
+    } while (!check_reachable(&coord, room_count));
 
     for (coord.x = 0; coord.x < GAME_BATS; coord.x++)
         game.bats_visible[coord.x] = false;
