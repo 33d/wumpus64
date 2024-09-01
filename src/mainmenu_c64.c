@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "mainmenu.h"
 #include "input.h"
@@ -76,6 +77,8 @@ enum Difficulty main_menu_get_selection() {
             choice = choice == 2 ? 0 : choice + 1;
 
     } while(input != BUTTON);
+
+    _randomize();
 
     return choice;
 }
