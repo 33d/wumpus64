@@ -7,4 +7,5 @@ images/*.xbm
 !images/wumpus.xbm
 !images/player_*.xbm
 !images/text.xbm
+!images/title.xbm
 .vscode

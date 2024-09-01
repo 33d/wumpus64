@@ -43,12 +43,6 @@ static const uint8_t TILE_URLL[] = {
 // offsets from top left to colour slime cells
 static const uint8_t SLIME[] = { 1, 2, 40, 41, 42, 43, 80, 81, 82, 83, 121, 122 };
 
-void display_new() {
-    uint8_t* line = screenmem + (24 * 40) + 4;
-    for (; line > screenmem; line -= 40)
-        memset(line, 32, 32);
-}
-
 static void draw_tile_from_indices(
         uint8_t* output, uint8_t* color_output,
         const uint8_t* indices
@@ -348,6 +342,8 @@ void display_init() {
     // The space down the sides
     VIC.bgcolor3 = COLOR_GRAY1;
 
+    memset(screenmem, 32, 25 * 40);
+
     // Fill in the sides of the screen
     memset(ptr, 32 + 192, 4);
     for (ptr += 36; ptr < screenmem + 996 - 40; ptr += 40)
@@ -379,4 +375,27 @@ void display_init() {
     
     // Player sprite on
     VIC.spr_ena = 0x3;
+}
+
+void display_end() {
+    __asm__("sei");
+
+    // Sprites off
+    __asm__("lda #0");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, spr_ena));
+
+    // Raster interrupts off
+    __asm__("lda #0");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, imr));
+    // Reset interrupt flag
+    __asm__("lda #$FF");
+    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
+
+    // Kernal ROM on
+    __asm__("lda #%b", ~0x07);
+    __asm__("and 1");
+    __asm__("ora #6");
+    __asm__("sta 1");
+
+    __asm__("cli");
 }

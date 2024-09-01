@@ -68,7 +68,21 @@ for n in range(57, 63):
     print("0, 0, 0, 0, 0, 0, 0, 0,")
 
 # 64: text
-process(['text.xbm'], range(192), 192)
+process(['text.xbm'], range(128), 192)
+
+print(",")
+
+# 192: title graphics
+process(['title.xbm'], range(40), 10)
+
+print(",")
+
+# 232-254: empty
+for n in range(232, 255):
+    print("0, 0, 0, 0, 0, 0, 0, 0,")
+
+# 255: solid
+print("255, 255, 255, 255, 255, 255, 255, 255")
 
 print("""\
 };
