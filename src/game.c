@@ -86,9 +86,9 @@ static void spread(const struct GameCoord *coord,
 #pragma static-locals(pop)
 
 /***
- * @param mask Don't choose rooms with 0 bits set in the mask
+ * @param mask Don't choose tiles with 0 bits set in the mask
  */
-static void random_room(struct GameCoord* coord, uint_fast8_t mask) {
+static void random_tile(struct GameCoord* coord, uint_fast8_t mask) {
     mask = ~mask;
     do {
         coord->x = rand() % GAME_WIDTH;
@@ -97,7 +97,7 @@ static void random_room(struct GameCoord* coord, uint_fast8_t mask) {
 }
 
 static void place_wumpus() {
-    random_room(&game.wumpus, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
+    random_tile(&game.wumpus, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
 
     game.map[game.wumpus.y][game.wumpus.x] |= MASK_WUMPUS;
 
@@ -107,7 +107,7 @@ static void place_wumpus() {
 static void place_pits() {
     struct GameCoord* coord;
     for (coord = &(game.pit[0]); coord < &(game.pit[0]) + GAME_PITS; coord++) {
-        random_room(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
+        random_tile(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
 
         game.map[coord->y][coord->x] |= MASK_PIT;
 
@@ -118,12 +118,12 @@ static void place_pits() {
 static void place_bats() {
     struct GameCoord* coord;
     for (coord = &(game.bats[0]); coord < &(game.bats[0]) + GAME_BATS; coord++) {
-        random_room(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
+        random_tile(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
     }
 }
 
 static void place_player() {
-    random_room(&game.player, MASK_ROOM);
+    random_tile(&game.player, MASK_ROOM);
 }
 
 #pragma static-locals(push, off)
@@ -131,8 +131,8 @@ static void place_player() {
 static void count_reachable(struct GameCoord coord, uint_least8_t* count) {
     struct GameCoord newCoord;
 
-    // If we've already visited this room, stop
-    if (game.map[coord.y][coord.x] & MASK_VISIBLE)
+    // If we've already visited this room, or this is a pit, stop
+    if (game.map[coord.y][coord.x] & (MASK_VISIBLE | MASK_PIT))
         return;
 
     ++(*count);
@@ -166,7 +166,7 @@ static bool check_reachable(struct GameCoord* start, uint_least8_t expected) {
         for (x = 0; x < GAME_WIDTH; ++x)
             game.map[y][x] &= ~MASK_VISIBLE;
 
-    return count == expected;
+    return count == expected - GAME_PITS;
 }
 
 void game_new(uint_fast8_t room_count) {
@@ -182,16 +182,20 @@ void game_new(uint_fast8_t room_count) {
 
         // Place the rooms
         for (i = 0; i < room_count; ++i) {
-            random_room(&coord, MASK_UL | MASK_UR);
+            random_tile(&coord, MASK_UL | MASK_UR);
             game.map[coord.y][coord.x] = MASK_ROOM;
         };
+
+        // Place the pits now, as they're considered when determining
+        // reachability
+        place_pits();
+
     } while (!check_reachable(&coord, room_count));
 
     for (coord.x = 0; coord.x < GAME_BATS; coord.x++)
         game.bats_visible[coord.x] = false;
 
     place_wumpus();
-    place_pits();
     place_bats();
     place_player();
 
@@ -229,10 +233,10 @@ static void check_player() {
                 // Move the player, don't transport to the same place
                 do {
                     // re-use the bat coordinates memory for this
-                    random_room(coord, MASK_ROOM | MASK_WUMPUS | MASK_PIT | MASK_BLOOD | MASK_SLIME);
+                    random_tile(coord, MASK_ROOM | MASK_WUMPUS | MASK_PIT | MASK_BLOOD | MASK_SLIME);
                 } while (coords_equal(&game.player, coord));
                 copy_coord(coord, &game.player);
-                random_room(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
+                random_tile(coord, MASK_ROOM | MASK_BLOOD | MASK_SLIME);
                 game.bats_visible[i] = false;
             } else {
                 // The first visit, just show the bat
