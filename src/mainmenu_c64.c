@@ -21,8 +21,9 @@ static void draw_screen() {
     VIC.ctrl1 = 0x1b;
     VIC.ctrl2 = 0x08;
 
-    // Character memory at $3800
-    VIC.addr |= 0xE;
+    // Set character memory location
+    VIC.addr &= ~0xE;
+    VIC.addr |= charmem_reg;
 
     // Set colours
     VIC.bordercolor = COLOR_GRAY1;

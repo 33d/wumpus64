@@ -321,15 +321,15 @@ void init_raster_interrupt() {
 typedef void (*void_func) (void);
 
 void display_init() {
-    const uint8_t sprite_ptr = ((const uint16_t) spritedata / 64);
     uint8_t* ptr = screenmem;
 
     // Extended background mode, and set raster interrupt high bit
     VIC.ctrl1 = 0x5b;
     VIC.ctrl2 = 0x08;
 
-    // Character memory at $3800
-    VIC.addr |= 0xE;
+    // Set character memory location
+    VIC.addr &= ~0xE;
+    VIC.addr |= charmem_reg;
 
     init_raster_interrupt();
 
@@ -358,12 +358,12 @@ void display_init() {
     memset(COLOR_RAM + 40 * 24, COLOR_GRAY1, 40);
 
     // Set the sprite pointers
-    *(screenmem + 0x3f8) = sprite_ptr;
-    *(screenmem + 0x3f9) = sprite_ptr + 1;
-    *(screenmem + 0x3fa) = sprite_ptr + 2;
-    *(screenmem + 0x3fb) = sprite_ptr + 3;
-    *(screenmem + 0x3fc) = sprite_ptr + 4;
-    *(screenmem + 0x3fd) = sprite_ptr + 5;
+    *(screenmem + 0x3f8) = spritedata_reg;
+    *(screenmem + 0x3f9) = spritedata_reg + 1;
+    *(screenmem + 0x3fa) = spritedata_reg + 2;
+    *(screenmem + 0x3fb) = spritedata_reg + 3;
+    *(screenmem + 0x3fc) = spritedata_reg + 4;
+    *(screenmem + 0x3fd) = spritedata_reg + 5;
 
     // Sprite colors for player
     VIC.spr0_color = COLOR_YELLOW;
