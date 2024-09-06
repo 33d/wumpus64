@@ -33,12 +33,24 @@ static void draw_screen() {
     memset(screenmem, 32, 25 * 40);
     memset(COLOR_RAM, COLOR_GRAY1, 25 * 40);
 
+    // Logo
     i = 192;
     ptr = screenmem + (40 * 6) + 14;
     for (y = 0; y < 160; y += 30) {
         for (x = 0; x < 10; x++)
             ptr[y++] = i++;
     }
+
+    // Joystick instructions
+    ptr = screenmem + (40 * 24);
+    for (i = 232, y = 0; y < 6; ++i, ++y)
+        ptr[y] = i;
+
+    // URL
+    i = 238;
+    ptr = screenmem + (40 * 24) + 28;
+    for (i = 238, y = 0; y < 11; ++i, ++y)
+        ptr[y] = i;
 
     ptr = screenmem + (40 * 11) + 18;
     for (y = 0; y < 3; ++y) {

@@ -55,12 +55,10 @@ process([
     # 50: Wall LL, LR
     85, 90, 102, 105
 ], 4)
-
 print(",")
 
 # 53: wumpus
 process(['wumpus.xbm'], range(4), 2)
-
 print(",")
 
 # 55-63: blank
@@ -69,16 +67,22 @@ for n in range(57, 63):
 
 # 64: text
 process(['text.xbm'], range(128), 192)
-
 print(",")
 
 # 192: title graphics
 process(['title.xbm'], range(40), 10)
-
 print(",")
 
-# 232-254: empty
-for n in range(232, 255):
+# 232-237: joystick message
+process(['joystick.xbm'], range(6), 6)
+print(",")
+
+# 238-248: URL
+process(['url.xbm'], range(11), 11)
+print(",")
+
+# 249-254: empty
+for n in range(249, 255):
     print("0, 0, 0, 0, 0, 0, 0, 0,")
 
 # 255: solid
