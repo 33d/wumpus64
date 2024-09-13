@@ -219,10 +219,6 @@ void display_update_message() {
 
 #pragma optimize(push, off);
 
-void nmi_handler() {
-    __asm__("rti");
-}
-
 void raster_interrupt_1();
 void raster_interrupt_2();
 
@@ -274,34 +270,9 @@ void raster_interrupt_2() {
 void init_raster_interrupt() {
     __asm__("sei");
 
-    // Kernal ROM off
-    __asm__("lda #%b", ~0x07);
-    __asm__("and 1");
-    __asm__("ora #$05");
-    __asm__("sta 1");
-
-    // Disable CIA interrupts
-    __asm__("lda #$7F");
-    __asm__("sta %w+%b", (uint16_t) &CIA1, offsetof(struct __6526, icr));
-    __asm__("sta %w+%b", (uint16_t) &CIA2, offsetof(struct __6526, icr));
-
-    // Clear VIC interrupt flag
-    __asm__("and %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
-    __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
-
-    // Acknowledge CIA interrupts
-    __asm__("sta %w+%b", (uint16_t) &CIA1, offsetof(struct __6526, icr));
-    __asm__("sta %w+%b", (uint16_t) &CIA2, offsetof(struct __6526, icr));
-
     // Set scanline
     __asm__("lda #242");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, rasterline));
-
-    // Stop the RESTORE key crashing the program
-    __asm__("lda #<(%v)", nmi_handler);
-    __asm__("sta $FFFA");
-    __asm__("lda #>(%v)", nmi_handler);
-    __asm__("sta $FFFB");
 
     // Set interrupt routine
     __asm__("lda #<(%v)", raster_interrupt_1);
@@ -390,12 +361,6 @@ void display_end() {
     // Reset interrupt flag
     __asm__("lda #$FF");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, irr));
-
-    // Kernal ROM on
-    __asm__("lda #%b", ~0x07);
-    __asm__("and 1");
-    __asm__("ora #6");
-    __asm__("sta 1");
 
     __asm__("cli");
 }

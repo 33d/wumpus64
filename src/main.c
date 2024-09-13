@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "sys_init.h"
 #include "game.h"
 #include "display.h"
 #include "input.h"
@@ -51,6 +52,7 @@ void main(void) {
     enum Difficulty difficulty;
     enum EndMenuState end_state;
 
+    sys_init();
     input_init();
 
     while (1) {
