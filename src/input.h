@@ -2,7 +2,7 @@
 #define INPUT_H
 
 enum InputValue {
-    NONE, UP, DOWN, LEFT, RIGHT, BUTTON
+    NONE, CENTER, UP, DOWN, LEFT, RIGHT, BUTTON
 };
 
 void input_init();

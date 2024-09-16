@@ -1,4 +1,4 @@
-#include "sys_init.h"
+#include "sys.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -37,5 +37,19 @@ void sys_init() {
     __asm__("lda #>(%v)", nmi_handler);
     __asm__("sta $FFFB");
 
+    // Use timer A for random numbers:
+    // Leave bits 6 and 7
+    //  0: Count clock ticks
+    //  0: Don't load
+    //  0: Continuous mode
+    //  0: Don't care about the output
+    //  0: No output
+    //  1: Start timer
+    CIA1.cra = CIA1.cra & 0x3F | 0x01;
+
     __asm__("cli");
+}
+
+uint_fast16_t sys_random_seed() {
+    return ((uint_fast16_t) CIA1.ta_hi << 8) | CIA1.ta_lo;
 }

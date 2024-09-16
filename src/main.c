@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include <stdio.h>
+#include <stdlib.h>
 
-#include "sys_init.h"
+#include "sys.h"
 #include "game.h"
 #include "display.h"
 #include "input.h"
@@ -28,7 +28,9 @@ static enum EndMenuState play_level(enum Difficulty difficulty) {
             return end_state;
         }
 
-        input = input_next();
+        do {
+            input = input_next();
+        } while (input == NONE || input == CENTER);
 
         switch (input) {
             case UP: game_move_up(); break;
@@ -57,6 +59,8 @@ void main(void) {
 
     while (1) {
         difficulty = main_menu_get_selection();
+
+        srand(sys_random_seed());
 
         do {
             end_state = play_level(difficulty);

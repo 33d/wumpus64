@@ -91,7 +91,5 @@ enum Difficulty main_menu_get_selection() {
 
     } while(input != BUTTON);
 
-    _randomize();
-
     return choice;
 }
