@@ -224,7 +224,7 @@ void raster_interrupt_2();
 
 void raster_interrupt_1() {
     __asm__("pha");
-    // Delay 38 cycles - that seems to be enough to get the screen mode
+    // Delay 40 cycles - that seems to be enough to get the screen mode
     // to change during a border. I can't explain this number - maybe
     // it's a badline, and the interrupt is actually at the start of the
     // previous line.
@@ -234,7 +234,7 @@ void raster_interrupt_1() {
     __asm__("lda ($0, X)"); // 6
     __asm__("lda ($0, X)"); // 6
     __asm__("lda ($0, X)"); // 6
-    __asm__("nop"); // 2
+    __asm__("lda 0, X"); // 4
     __asm__("lda #$1b");
     __asm__("sta %w+%b", (uint16_t) &VIC, offsetof(struct __vic2, ctrl1));
     __asm__("lda #251");
